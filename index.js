@@ -1,20 +1,21 @@
-import { Client, GatewayIntentBits, Collection } from "discord.js";
+import { Client, GatewayIntentBits, Collection, EmbedBuilder } from "discord.js";
 import { Riffy } from "riffy";
 import fs from "fs";
 import path from "path";
-import chalk from "chalk";
+import chalk 
 
+from "chalk";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const token = "token";
-const prefix = "$";
+const token = "";
+const prefix = "$"; 
 const nodes = [
     {
-        host: "TU_HOST_LAVALINK", 
-        port: 2333,
-        password: "youshallnotpass",
+        host: "lavalinkv4.serenetia.com", 
+        port: 80,
+        password: "https://dsc.gg/ajidevserver",
         secure: false
     }
 ];
@@ -49,13 +50,59 @@ client.riffy.on("nodeError", (node, error) => {
 
 client.riffy.on("trackStart", async (player, track) => {
     const channel = client.channels.cache.get(player.textChannel);
-    if (channel) channel.send(`🎶 Reproduciendo ahora: **${track.info.title}**`);
+    if (!channel) return;
+
+    const embed = new EmbedBuilder()
+        .setColor("#ffffff")
+        .setTitle(" Reproduciendo ahora")
+        .setDescription(`[${track.info.title}](${track.info.uri})`)
+        .setThumbnail(track.info.thumbnail)
+        .setFooter({ text: `Autor: ${track.info.author}` });
+
+    channel.send({ embeds: [embed] });
 });
 
 client.riffy.on("queueEnd", async (player) => {
     const channel = client.channels.cache.get(player.textChannel);
-    if (channel) channel.send("👋 La lista se ha terminado, saliendo del canal.");
+    if (channel) {
+        const embed = new EmbedBuilder()
+            .setColor("#ffffff")
+            .setDescription(" **La lista ha terminado. Saliendo del canal...**");
+        channel.send({ embeds: [embed] });
+    }
     player.destroy();
+});
+
+client.on("interactionCreate", async (interaction) => {
+    if (!interaction.isButton()) return;
+
+    const player = client.riffy.players.get(interaction.guildId);
+    if (!player) return interaction.reply({ content: " No hay música sonando.", ephemeral: true });
+
+    const embed = new EmbedBuilder().setColor("#ffffff");
+
+    try {
+        if (interaction.customId === "music_pause") {
+            const isPaused = player.paused;
+            player.pause(!isPaused);
+            embed.setDescription(isPaused ? " **Música reanudada**" : " **Música pausada**");
+            return interaction.reply({ embeds: [embed] });
+        }
+
+        if (interaction.customId === "music_skip") {
+            player.stop();
+            embed.setDescription(" **Canción saltada vía botón**");
+            return interaction.reply({ embeds: [embed] });
+        }
+
+        if (interaction.customId === "music_stop") {
+            player.destroy();
+            embed.setDescription(" **Reproducción detenida por el usuario**");
+            return interaction.reply({ embeds: [embed] });
+        }
+    } catch (e) {
+        console.error(e);
+    }
 });
 
 const loadCommands = async () => {
@@ -81,6 +128,7 @@ client.on("ready", () => {
     ║        RIFFY MUSIC BOT OK            ║
     ╚══════════════════════════════════════╝
     [$] BOT: ${client.user.tag}
+    [$] NODOS: ${client.riffy.nodes.size}
     `));
 });
 
