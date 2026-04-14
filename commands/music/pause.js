@@ -6,7 +6,7 @@ export default {
   aliases: ["resume", "pausar", "continuar"],
   async execute(client, message, args) {
     const player = client.riffy.players.get(message.guild.id);
-    const embed = new EmbedBuilder().setColor("#d200ff");
+    const embed = new EmbedBuilder().setColor("#ffffff");
 
     if (!player) {
       return message.reply({ 
